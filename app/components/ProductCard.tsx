@@ -1,6 +1,6 @@
 'use client';
 
-import Image from 'next/image';
+import Image, { StaticImageData } from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ShoppingBag } from 'lucide-react';
@@ -13,7 +13,7 @@ interface ProductCardProps {
     _id: string;
     name: string;
     price: number;
-    image: string[];
+    image: (string | StaticImageData)[];
     description: string;
     category?: string;
     bestseller?: boolean;

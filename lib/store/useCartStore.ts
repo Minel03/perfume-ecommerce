@@ -1,11 +1,12 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { StaticImageData } from 'next/image';
 
 export interface CartItem {
   _id: string;
   name: string;
   price: number;
-  image: string[];
+  image: (string | StaticImageData)[];
   quantity: number;
 }
 
