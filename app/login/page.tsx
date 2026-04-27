@@ -13,13 +13,14 @@ import { useAuthStore } from '@/lib/store/useAuthStore';
 
 const authSchema = z.object({
   email: z.string().email('Invalid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  password: z.string().min(6, 'Password must be at least 6 characters').optional().or(z.literal('')),
 });
 
 type AuthFormData = z.infer<typeof authSchema>;
 
 export default function LoginPage() {
   const [isLogin, setIsLogin] = useState(true);
+  const [isRecovery, setIsRecovery] = useState(false);
   const [loading, setLoading] = useState(false);
   const { user, initialized } = useAuthStore();
   const router = useRouter();
@@ -43,11 +44,27 @@ export default function LoginPage() {
     const { email, password } = data;
 
     try {
-      if (isLogin) {
+      if (isRecovery) {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/auth/update-password`,
+        });
+        if (error) throw error;
+        toast.success('RECOVERY LINK SENT');
+        setIsRecovery(false);
+        setIsLogin(true);
+      } else if (isLogin) {
+        if (!password) {
+          toast.error('PASSWORD REQUIRED');
+          return;
+        }
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         toast.success('WELCOME BACK');
       } else {
+        if (!password) {
+          toast.error('PASSWORD REQUIRED');
+          return;
+        }
         const { error } = await supabase.auth.signUp({ 
           email, 
           password,
@@ -92,10 +109,10 @@ export default function LoginPage() {
             animate={{ opacity: 1, letterSpacing: '0.8em' }}
             className="text-[10px] text-[#FF3B30] font-black uppercase mb-6 block tracking-[0.8em] ml-[0.8em]"
           >
-            {isLogin ? 'WELCOME BACK' : 'CREATE ACCOUNT'}
+            {isRecovery ? 'RECOVER ACCESS' : isLogin ? 'WELCOME BACK' : 'CREATE ACCOUNT'}
           </motion.span>
           <h1 className="text-5xl font-prata text-zinc-900 tracking-tight">
-            {isLogin ? 'The Sillage Lab' : 'Join the House'}
+            {isRecovery ? 'Restoration' : isLogin ? 'The Sillage Lab' : 'Join the House'}
           </h1>
         </div>
 
@@ -113,18 +130,27 @@ export default function LoginPage() {
                 <p className="text-[8px] text-[#FF3B30] mt-1 tracking-widest uppercase font-bold">{errors.email.message}</p>
               )}
             </div>
-            <div className="relative">
-              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" size={16} strokeWidth={1.5} />
-              <input 
-                {...register('password')}
-                type="password" 
-                placeholder="Password" 
-                className="w-full bg-zinc-50 border border-zinc-100 rounded-sm py-5 pl-12 pr-6 text-[11px] font-outfit tracking-widest outline-none focus:border-zinc-900 transition-colors uppercase"
-              />
-              {errors.password && (
-                <p className="text-[8px] text-[#FF3B30] mt-1 tracking-widest uppercase font-bold">{errors.password.message}</p>
-              )}
-            </div>
+            {!isRecovery && (
+              <div className="relative">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" size={16} strokeWidth={1.5} />
+                <input 
+                  {...register('password')}
+                  type="password" 
+                  placeholder="Password" 
+                  className="w-full bg-zinc-50 border border-zinc-100 rounded-sm py-5 pl-12 pr-6 text-[11px] font-outfit tracking-widest outline-none focus:border-zinc-900 transition-colors uppercase"
+                />
+                {errors.password && (
+                  <p className="text-[8px] text-[#FF3B30] mt-1 tracking-widest uppercase font-bold">{errors.password.message}</p>
+                )}
+                <button 
+                  type="button"
+                  onClick={() => setIsRecovery(true)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-[8px] font-black tracking-widest text-zinc-400 hover:text-[#FF3B30] transition-colors uppercase"
+                >
+                  Forgot?
+                </button>
+              </div>
+            )}
           </div>
 
           <button 
@@ -139,12 +165,15 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <div className="mt-12 text-center">
+        <div className="mt-12 text-center flex flex-col gap-4">
           <button 
-            onClick={() => setIsLogin(!isLogin)}
+            onClick={() => {
+              setIsLogin(!isLogin);
+              setIsRecovery(false);
+            }}
             className="text-[10px] font-bold tracking-[0.3em] text-zinc-400 hover:text-zinc-900 transition-colors uppercase"
           >
-            {isLogin ? "Don't have an account? Join us" : "Already a member? Sign in"}
+            {isRecovery ? "Back to Login" : isLogin ? "Don't have an account? Join us" : "Already a member? Sign in"}
           </button>
         </div>
       </motion.div>
