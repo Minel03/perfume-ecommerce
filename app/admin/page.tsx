@@ -2,11 +2,12 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Loader2, Menu } from 'lucide-react';
+import { Plus, Menu } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/lib/store/useAuthStore';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
+import Skeleton from '../components/Skeleton';
 
 // New Modular Components
 import AdminSidebar from '@/app/components/admin/Sidebar';
@@ -271,11 +272,34 @@ export default function AdminPage() {
 
   if (authLoading || isLoading) {
     return (
-      <div className='min-h-screen bg-zinc-950 flex items-center justify-center'>
-        <Loader2
-          className='animate-spin text-zinc-800'
-          size={48}
-        />
+      <div className='min-h-screen bg-zinc-950 flex overflow-x-hidden'>
+        {/* Sidebar Skeleton */}
+        <div className="w-80 border-r border-zinc-900 p-12 space-y-12 hidden lg:block">
+          <Skeleton className="h-12 w-32 bg-zinc-900" />
+          <div className="space-y-6">
+            <Skeleton className="h-4 w-full bg-zinc-900" />
+            <Skeleton className="h-4 w-full bg-zinc-900" />
+            <Skeleton className="h-4 w-full bg-zinc-900" />
+          </div>
+        </div>
+        <div className='flex-1 p-6 md:p-12 space-y-16'>
+          <div className="flex justify-between items-center">
+            <div className="space-y-4">
+              <Skeleton className="h-3 w-24 bg-zinc-900" />
+              <Skeleton className="h-12 w-48 bg-zinc-900" />
+            </div>
+            <div className="flex gap-4">
+              <Skeleton className="h-12 w-32 bg-zinc-900 rounded-full" />
+              <Skeleton className="h-12 w-32 bg-zinc-900 rounded-full" />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <Skeleton className="h-48 w-full bg-zinc-900" />
+            <Skeleton className="h-48 w-full bg-zinc-900" />
+            <Skeleton className="h-48 w-full bg-zinc-900" />
+          </div>
+          <Skeleton className="h-96 w-full bg-zinc-900" />
+        </div>
       </div>
     );
   }

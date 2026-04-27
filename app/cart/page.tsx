@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
+import Skeleton from '../components/Skeleton';
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity, getTotal } = useCartStore();
@@ -28,7 +29,36 @@ export default function CartPage() {
     }
   }, [user, loading, router]);
 
-  if (loading || !user) return null;
+  if (loading || !user) {
+    return (
+      <div className="min-h-screen bg-white pt-32 pb-24 px-6 lg:px-12">
+        <div className="max-w-7xl mx-auto space-y-20">
+          <div className="space-y-6">
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-24 w-64" />
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-20">
+            <div className="lg:col-span-8 space-y-12">
+              <Skeleton className="h-4 w-full" />
+              {[1, 2, 3].map((n) => (
+                <div key={n} className="flex gap-8">
+                  <Skeleton className="w-24 md:w-32 aspect-3/4" />
+                  <div className="flex-1 space-y-4 py-4">
+                    <Skeleton className="h-4 w-1/3" />
+                    <Skeleton className="h-3 w-1/4" />
+                    <Skeleton className="h-3 w-16" />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="lg:col-span-4">
+              <Skeleton className="h-[500px] w-full" />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (items.length === 0) {
     return (

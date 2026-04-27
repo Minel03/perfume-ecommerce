@@ -11,14 +11,15 @@ import {
   Truck,
   RotateCcw,
   Plus,
-  Minus,
-  Loader2
+  Minus
 } from 'lucide-react';
 import ProductCard from '../../components/ProductCard';
 import { useCartStore } from '@/lib/store/useCartStore';
 import { useAuthStore } from '@/lib/store/useAuthStore';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
+
+import Skeleton from '../../components/Skeleton';
 
 interface Product {
   id: string;
@@ -82,9 +83,37 @@ export default function ProductPage({
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center space-y-4 pt-32">
-        <Loader2 className="animate-spin text-rose-500" size={32} />
-        <p className="text-[10px] tracking-[0.4em] uppercase text-zinc-400">Retrieving Manifest...</p>
+      <div className='min-h-screen bg-white pt-32 pb-24 px-6 lg:px-12'>
+        <div className='max-w-7xl mx-auto'>
+          <div className='grid grid-cols-1 lg:grid-cols-2 gap-20'>
+            <div className="space-y-4">
+              <Skeleton className="aspect-4/5 w-full" />
+              <div className="grid grid-cols-4 gap-4">
+                <Skeleton className="aspect-square w-full" />
+                <Skeleton className="aspect-square w-full" />
+                <Skeleton className="aspect-square w-full" />
+                <Skeleton className="aspect-square w-full" />
+              </div>
+            </div>
+            <div className="space-y-12">
+              <div className="space-y-6">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-20 w-full" />
+                <Skeleton className="h-8 w-48" />
+              </div>
+              <Skeleton className="h-32 w-full" />
+              <div className="grid grid-cols-3 gap-8">
+                <Skeleton className="h-20 w-full" />
+                <Skeleton className="h-20 w-full" />
+                <Skeleton className="h-20 w-full" />
+              </div>
+              <div className="flex gap-8">
+                <Skeleton className="h-16 w-32 rounded-full" />
+                <Skeleton className="h-16 flex-1 rounded-full" />
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }

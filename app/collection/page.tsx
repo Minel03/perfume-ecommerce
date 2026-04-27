@@ -4,7 +4,9 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import ProductCard from '../components/ProductCard';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Filter, X, Loader2 } from 'lucide-react';
+import { Filter, X } from 'lucide-react';
+
+import Skeleton from '../components/Skeleton';
 
 interface Product {
   id: string;
@@ -88,9 +90,24 @@ export default function CollectionPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center space-y-4 pt-32">
-        <Loader2 className="animate-spin text-rose-500" size={32} />
-        <p className="text-[10px] tracking-[0.4em] uppercase text-zinc-400">Opening Archives...</p>
+      <div className='min-h-screen bg-white pt-32 pb-24 px-6 lg:px-12'>
+        <div className='max-w-7xl mx-auto mb-20 text-center'>
+          <Skeleton className="h-4 w-32 mx-auto mb-4" />
+          <Skeleton className="h-24 w-64 mx-auto mb-8" />
+          <Skeleton className="h-12 w-full max-w-2xl mx-auto" />
+        </div>
+        <div className='max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-8 gap-y-16'>
+          {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
+            <div key={n} className="space-y-6">
+              <Skeleton className="aspect-3/4 w-full" />
+              <div className="space-y-3 flex flex-col items-center">
+                <Skeleton className="h-4 w-2/3" />
+                <Skeleton className="h-3 w-1/3" />
+                <Skeleton className="h-6 w-1/2 mt-2" />
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }

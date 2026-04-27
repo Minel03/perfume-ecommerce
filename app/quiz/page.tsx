@@ -5,10 +5,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { products } from '../assets/assets';
 import Image, { StaticImageData } from 'next/image';
 import Link from 'next/link';
-import { ArrowRight, RefreshCcw } from 'lucide-react';
+import { ArrowRight, RefreshCcw, Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/lib/store/useAuthStore';
 import toast from 'react-hot-toast';
+import Skeleton from '../components/Skeleton';
 
 const questions = [
   {
@@ -57,6 +58,7 @@ export default function QuizPage() {
   const [step, setStep] = useState(0); // 0: Start, 1-3: Questions, 4: Result
   const [answers, setAnswers] = useState<string[]>([]);
   const [result, setResult] = useState<Product | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const startQuiz = () => setStep(1);
 
@@ -71,6 +73,9 @@ export default function QuizPage() {
   };
 
   const calculateResult = async (finalAnswers: string[]) => {
+    setIsProcessing(true);
+    setStep(questions.length + 1);
+
     const vibe = finalAnswers[0];
     const categoryPreference = finalAnswers[1];
     const intensity = finalAnswers[2];
@@ -88,17 +93,13 @@ export default function QuizPage() {
             }
           }
         });
-        toast.success('SCENT IDENTITY SYNCHRONIZED');
       } catch (e) {
         console.error('Profile sync error:', e);
       }
     }
 
     // 2. Intelligent Recommendation
-    // We try to find products that match the gender/category preference
     const filtered = products.filter((p) => p.category === categoryPreference);
-    
-    // Stable selection logic (prevents impurity errors)
     const fallbackIndex = finalAnswers.join('').length % filtered.length;
     
     const recommendation =
@@ -106,8 +107,11 @@ export default function QuizPage() {
       filtered[fallbackIndex] || 
       products[0];
 
-    setResult(recommendation as Product);
-    setStep(questions.length + 1);
+    // Simulate luxury processing
+    setTimeout(() => {
+      setResult(recommendation as Product);
+      setIsProcessing(false);
+    }, 2500);
   };
 
   const resetQuiz = () => {
@@ -213,57 +217,82 @@ export default function QuizPage() {
             </motion.div>
           )}
 
-          {/* RESULT */}
-          {step > questions.length && result && (
+          {/* RESULT OR PROCESSING */}
+          {step > questions.length && (
             <motion.div
-              key='result'
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-              className='text-center flex flex-col items-center space-y-16'>
-              <div className='space-y-6'>
-                <motion.span
-                  initial={{ opacity: 0, letterSpacing: '0.2em' }}
-                  animate={{ opacity: 1, letterSpacing: '0.6em' }}
-                  className='text-[10px] text-[#FF3B30] font-bold uppercase block tracking-[0.6em] ml-[0.6em]'>
-                  YOUR SIGNATURE IDENTITY
-                </motion.span>
-                <h2 className='text-5xl md:text-7xl font-prata text-zinc-900 tracking-tighter'>
-                  Found: {result.name}
-                </h2>
-              </div>
-
-              <div className='relative aspect-3/4 w-full max-w-sm mx-auto overflow-hidden rounded-sm shadow-2xl group border border-zinc-100'>
-                <Image
-                  src={result.image[0]}
-                  alt={result.name}
-                  fill
-                  className='object-cover transition-transform duration-2000 group-hover:scale-110'
-                />
-                <div className='absolute inset-0 bg-black/5' />
-              </div>
-
-              <div className='space-y-10 w-full'>
-                <p className='text-zinc-500 text-[11px] font-outfit italic tracking-widest max-w-md mx-auto leading-relaxed'>
-                  &quot;{result.description}&quot;
-                </p>
-                <div className='flex flex-col sm:flex-row gap-6 justify-center items-center'>
-                  <Link
-                    href={`/products/${result._id}`}
-                    className='bg-zinc-900 text-white px-16 py-6 text-[10px] font-bold tracking-[0.6em] uppercase hover:bg-[#FF3B30] transition-all duration-500 rounded-full'>
-                    Shop This Scent — ₱{result.price.toLocaleString()}
-                  </Link>
-                  <button
-                    onClick={resetQuiz}
-                    className='group flex items-center gap-4 text-[10px] font-bold tracking-[0.4em] uppercase text-zinc-400 hover:text-zinc-900 transition-colors'>
-                    <RefreshCcw
-                      size={14}
-                      className='group-hover:rotate-180 transition-transform duration-700'
-                    />
-                    Retake Quiz
-                  </button>
+              key='result-container'
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className='w-full'>
+              {isProcessing ? (
+                <div className='flex flex-col items-center space-y-12 py-20'>
+                  <div className='relative'>
+                    <Loader2 className='animate-spin text-[#FF3B30]' size={48} strokeWidth={1} />
+                    <div className='absolute inset-0 blur-xl bg-[#FF3B30]/20 rounded-full animate-pulse' />
+                  </div>
+                  <div className='space-y-4 text-center'>
+                    <motion.p
+                      animate={{ opacity: [0.4, 1, 0.4] }}
+                      transition={{ repeat: Infinity, duration: 2 }}
+                      className='text-[10px] font-bold tracking-[0.8em] uppercase text-zinc-400 ml-[0.8em]'>
+                      Decoding Your Essence
+                    </motion.p>
+                    <Skeleton className='h-8 w-64 mx-auto' />
+                  </div>
+                  <Skeleton className='aspect-3/4 w-full max-w-sm rounded-sm' />
                 </div>
-              </div>
+              ) : result ? (
+                <motion.div
+                  key='result'
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+                  className='text-center flex flex-col items-center space-y-16'>
+                  <div className='space-y-6'>
+                    <motion.span
+                      initial={{ opacity: 0, letterSpacing: '0.2em' }}
+                      animate={{ opacity: 1, letterSpacing: '0.6em' }}
+                      className='text-[10px] text-[#FF3B30] font-bold uppercase block tracking-[0.6em] ml-[0.6em]'>
+                      YOUR SIGNATURE IDENTITY
+                    </motion.span>
+                    <h2 className='text-5xl md:text-7xl font-prata text-zinc-900 tracking-tighter'>
+                      Found: {result.name}
+                    </h2>
+                  </div>
+
+                  <div className='relative aspect-3/4 w-full max-w-sm mx-auto overflow-hidden rounded-sm shadow-2xl group border border-zinc-100'>
+                    <Image
+                      src={result.image[0]}
+                      alt={result.name}
+                      fill
+                      className='object-cover transition-transform duration-2000 group-hover:scale-110'
+                    />
+                    <div className='absolute inset-0 bg-black/5' />
+                  </div>
+
+                  <div className='space-y-10 w-full'>
+                    <p className='text-zinc-500 text-[11px] font-outfit italic tracking-widest max-w-md mx-auto leading-relaxed'>
+                      &quot;{result.description}&quot;
+                    </p>
+                    <div className='flex flex-col sm:flex-row gap-6 justify-center items-center'>
+                      <Link
+                        href={`/products/${result._id}`}
+                        className='bg-zinc-900 text-white px-16 py-6 text-[10px] font-bold tracking-[0.6em] uppercase hover:bg-[#FF3B30] transition-all duration-500 rounded-full'>
+                        Shop This Scent — ₱{result.price.toLocaleString()}
+                      </Link>
+                      <button
+                        onClick={resetQuiz}
+                        className='group flex items-center gap-4 text-[10px] font-bold tracking-[0.4em] uppercase text-zinc-400 hover:text-zinc-900 transition-colors'>
+                        <RefreshCcw
+                          size={14}
+                          className='group-hover:rotate-180 transition-transform duration-700'
+                        />
+                        Retake Quiz
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              ) : null}
             </motion.div>
           )}
         </AnimatePresence>

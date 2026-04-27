@@ -9,6 +9,7 @@ import { useCartStore } from '@/lib/store/useCartStore';
 import { useAuthStore } from '@/lib/store/useAuthStore';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
+import Skeleton from '../components/Skeleton';
 import {
   CreditCard,
   Truck,
@@ -43,7 +44,7 @@ type CheckoutFormData = z.infer<typeof checkoutSchema>;
 export default function CheckoutPage() {
   const [step, setStep] = useState(1); // 1: Shipping, 2: Payment
   const { items, getTotal, clearCart } = useCartStore();
-  const { user } = useAuthStore();
+  const { user, loading } = useAuthStore();
   const router = useRouter();
   const [isProcessing, setIsProcessing] = useState(false);
   const [isVerifying] = useState(false);
@@ -89,12 +90,35 @@ export default function CheckoutPage() {
     }
   }, [user, reset, getValues]);
 
-  const nextStep = () => setStep(2);
-  const prevStep = () => setStep(1);
-
   const [paymentMethod, setPaymentMethod] = useState<'paymongo' | 'cod'>(
     'paymongo',
   );
+
+  if (loading) {
+    return (
+      <div className='min-h-screen bg-white py-32 md:py-48 px-6'>
+        <div className='max-w-[1440px] mx-auto'>
+          <div className='grid grid-cols-1 lg:grid-cols-12 gap-20'>
+            <div className='lg:col-span-7 space-y-12'>
+              <Skeleton className="h-4 w-48" />
+              <div className="space-y-6">
+                <Skeleton className="h-16 w-full" />
+                <Skeleton className="h-16 w-full" />
+                <Skeleton className="h-16 w-full" />
+                <Skeleton className="h-32 w-full" />
+              </div>
+            </div>
+            <div className='lg:col-span-5'>
+              <Skeleton className="h-[600px] w-full" />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const nextStep = () => setStep(2);
+  const prevStep = () => setStep(1);
 
   const onHandlePayment = async () => {
     if (!user) return;
