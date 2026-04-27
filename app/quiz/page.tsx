@@ -84,14 +84,14 @@ export default function QuizPage() {
     if (user) {
       try {
         await supabase.auth.updateUser({
-          data: { 
+          data: {
             scent_profile: {
               vibe,
               category: categoryPreference,
               intensity,
-              last_quiz: new Date().toISOString()
-            }
-          }
+              last_quiz: new Date().toISOString(),
+            },
+          },
         });
       } catch (e) {
         console.error('Profile sync error:', e);
@@ -101,10 +101,12 @@ export default function QuizPage() {
     // 2. Intelligent Recommendation
     const filtered = products.filter((p) => p.category === categoryPreference);
     const fallbackIndex = finalAnswers.join('').length % filtered.length;
-    
+
     const recommendation =
-      filtered.find(p => p.description.toLowerCase().includes(vibe.toLowerCase())) ||
-      filtered[fallbackIndex] || 
+      filtered.find((p) =>
+        p.description.toLowerCase().includes(vibe.toLowerCase()),
+      ) ||
+      filtered[fallbackIndex] ||
       products[0];
 
     // Simulate luxury processing
@@ -121,7 +123,7 @@ export default function QuizPage() {
   };
 
   return (
-    <div className='min-h-screen bg-white flex flex-col items-center justify-center px-6 pt-20 relative overflow-hidden'>
+    <div className='min-h-screen bg-white flex flex-col items-center px-6 py-32 relative overflow-y-auto'>
       {/* Background Detail */}
       <div className='absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-rose-50/20 rounded-full blur-3xl -z-10' />
 
@@ -176,7 +178,7 @@ export default function QuizPage() {
               initial={{ opacity: 0, x: 50 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -50 }}
-              className='space-y-16'>
+              className='space-y-16 pb-24'>
               <div className='flex justify-between items-end'>
                 <span className='text-[10px] font-bold text-[#FF3B30] tracking-[0.2em] uppercase'>
                   Step 0{step} <span className='text-zinc-300 mx-2'>/</span> 0
@@ -223,11 +225,15 @@ export default function QuizPage() {
               key='result-container'
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className='w-full'>
+              className='w-full pb-24'>
               {isProcessing ? (
                 <div className='flex flex-col items-center space-y-12 py-20'>
                   <div className='relative'>
-                    <Loader2 className='animate-spin text-[#FF3B30]' size={48} strokeWidth={1} />
+                    <Loader2
+                      className='animate-spin text-[#FF3B30]'
+                      size={48}
+                      strokeWidth={1}
+                    />
                     <div className='absolute inset-0 blur-xl bg-[#FF3B30]/20 rounded-full animate-pulse' />
                   </div>
                   <div className='space-y-4 text-center'>
