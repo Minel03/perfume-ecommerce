@@ -1,19 +1,82 @@
 'use client';
 
-import { useState } from 'react';
-import { products } from '../assets/assets';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
 import ProductCard from '../components/ProductCard';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Filter, X } from 'lucide-react';
+import { Filter, X, Loader2 } from 'lucide-react';
+
+interface Product {
+  id: string;
+  _id: string;
+  name: string;
+  price: number;
+  image: string[];
+  description: string;
+  category: string;
+  bestseller: boolean;
+}
+
+const FilterButtons = ({ 
+  filterType, 
+  setFilterType, 
+  setIsMobileFilterOpen, 
+  mobile = false 
+}: { 
+  filterType: string;
+  setFilterType: (type: string) => void;
+  setIsMobileFilterOpen: (open: boolean) => void;
+  mobile?: boolean;
+}) => (
+  <div className={`${mobile ? 'flex flex-col gap-8' : 'flex gap-6'} text-zinc-500`}>
+    {['ALL', 'MEN', 'WOMEN', 'UNISEX'].map((type) => (
+      <button
+        key={type}
+        onClick={() => {
+          setFilterType(type.toLowerCase());
+          if (mobile) setIsMobileFilterOpen(false);
+        }}
+        className={`text-left hover:text-black transition-colors ${
+          filterType === type.toLowerCase()
+            ? 'text-black font-bold border-b-2 border-rose-500 pb-1'
+            : ''
+        }`}>
+        {type}
+      </button>
+    ))}
+  </div>
+);
 
 export default function CollectionPage() {
+  const [dbProducts, setDbProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState('featured');
   const [filterType, setFilterType] = useState('all');
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
 
-  const filteredProducts = products.filter((item) => {
+  useEffect(() => {
+    async function fetchProducts() {
+      const { data } = await supabase
+        .from('products')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (data) {
+        // Map id to _id for component compatibility
+        const mapped = data.map(p => ({ ...p, _id: p.id }));
+        setDbProducts(mapped as Product[]);
+      }
+      setLoading(false);
+    }
+    const initFetch = async () => {
+      await fetchProducts();
+    };
+    initFetch();
+  }, []);
+
+  const filteredProducts = dbProducts.filter((item) => {
     if (filterType === 'all') return true;
-    return item.category === filterType;
+    return item.category?.toLowerCase() === filterType.toLowerCase();
   });
 
   const sortedProducts = [...filteredProducts].sort((a, b) => {
@@ -23,25 +86,14 @@ export default function CollectionPage() {
     return 0;
   });
 
-  const FilterButtons = ({ mobile = false }) => (
-    <div className={`${mobile ? 'flex flex-col gap-8' : 'flex gap-6'} text-zinc-500`}>
-      {['ALL', 'MEN', 'WOMEN', 'UNISEX'].map((type) => (
-        <button
-          key={type}
-          onClick={() => {
-            setFilterType(type.toLowerCase());
-            if (mobile) setIsMobileFilterOpen(false);
-          }}
-          className={`text-left hover:text-black transition-colors ${
-            filterType === type.toLowerCase()
-              ? 'text-black font-bold border-b-2 border-rose-500 pb-1'
-              : ''
-          }`}>
-          {type}
-        </button>
-      ))}
-    </div>
-  );
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center space-y-4 pt-32">
+        <Loader2 className="animate-spin text-rose-500" size={32} />
+        <p className="text-[10px] tracking-[0.4em] uppercase text-zinc-400">Opening Archives...</p>
+      </div>
+    );
+  }
 
   return (
     <div className='min-h-screen bg-white pt-32 pb-24 px-6 lg:px-12'>
@@ -73,7 +125,11 @@ export default function CollectionPage() {
           </button>
           
           <div className='hidden md:block'>
-            <FilterButtons />
+            <FilterButtons 
+              filterType={filterType} 
+              setFilterType={setFilterType} 
+              setIsMobileFilterOpen={setIsMobileFilterOpen} 
+            />
           </div>
         </div>
 
@@ -108,7 +164,12 @@ export default function CollectionPage() {
                   <X size={20} />
                 </button>
               </div>
-              <FilterButtons mobile />
+              <FilterButtons 
+                filterType={filterType} 
+                setFilterType={setFilterType} 
+                setIsMobileFilterOpen={setIsMobileFilterOpen} 
+                mobile 
+              />
             </motion.div>
           </motion.div>
         )}

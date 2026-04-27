@@ -5,21 +5,26 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   ShoppingBag,
   Search,
-  User,
+  User as UserIcon,
   Menu,
   X,
   LogOut,
   Package,
   UserCircle,
+  ShieldCheck,
 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { products } from '../assets/assets';
 import Image from 'next/image';
+import { useAuthStore } from '@/lib/store/useAuthStore';
+import { useCartStore } from '@/lib/store/useCartStore';
 
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
+  const { user, signOut } = useAuthStore();
+  const { items } = useCartStore();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -27,10 +32,8 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
 
-  // Clear search when opened
-  useEffect(() => {
-    if (isSearchOpen) setSearchQuery('');
-  }, [isSearchOpen]);
+  const cartCount = items.reduce((acc, item) => acc + item.quantity, 0);
+
 
   // Click away listener for profile dropdown
   useEffect(() => {
@@ -44,10 +47,10 @@ export default function Navbar() {
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [setIsProfileOpen]);
 
   // Pages that feature a dark hero image at the very top (full-width)
-  const hasDarkHero = ['/', '/contact'].includes(pathname);
+  const hasDarkHero = pathname === '/';
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -74,6 +77,22 @@ export default function Navbar() {
           )
           .slice(0, 4)
       : [];
+
+  const handleProfileClick = () => {
+    if (user) {
+      setIsProfileOpen(!isProfileOpen);
+    } else {
+      router.push('/login');
+    }
+  };
+
+  const handleLogout = async () => {
+    await signOut();
+    setIsProfileOpen(false);
+    router.push('/');
+  };
+
+  if (pathname.startsWith('/admin')) return null;
 
   return (
     <>
@@ -127,8 +146,11 @@ export default function Navbar() {
           {/* Right Navigation / Actions */}
           <div className='flex items-center justify-end gap-4 md:gap-6 xl:gap-8'>
             <button
-              onClick={() => setIsSearchOpen(true)}
-              className={`transition-colors hover:text-rose-500 ${textColorClass}`}>
+              onClick={() => {
+                setSearchQuery('');
+                setIsSearchOpen(true);
+              }}
+              className={`cursor-pointer transition-colors hover:text-rose-500 ${textColorClass}`}>
               <Search
                 size={18}
                 strokeWidth={1.2}
@@ -140,16 +162,19 @@ export default function Navbar() {
               className='relative hidden md:block'
               ref={profileRef}>
               <button
-                onClick={() => setIsProfileOpen(!isProfileOpen)}
-                className={`transition-colors hover:text-rose-500 flex items-center gap-2 ${textColorClass}`}>
-                <User
+                onClick={handleProfileClick}
+                className={`cursor-pointer transition-colors hover:text-rose-500 flex items-center gap-2 ${textColorClass}`}>
+                <UserIcon
                   size={18}
                   strokeWidth={1.2}
                 />
+                {user && (
+                  <span className='text-[8px] font-black tracking-widest text-[#FF3B30] uppercase ml-2'>Member</span>
+                )}
               </button>
 
               <AnimatePresence>
-                {isProfileOpen && (
+                {isProfileOpen && user && (
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -159,17 +184,29 @@ export default function Navbar() {
                       <Link
                         href='/profile'
                         onClick={() => setIsProfileOpen(false)}
-                        className='flex items-center gap-3 px-6 py-4 text-[10px] font-bold tracking-widest text-zinc-900 hover:bg-rose-50 transition-colors border-b border-zinc-50'>
+                        className='flex items-center gap-3 px-6 py-4 text-[10px] font-bold tracking-widest text-zinc-900 hover:bg-zinc-50 transition-colors border-b border-zinc-50'>
                         <UserCircle
                           size={14}
                           strokeWidth={1.5}
                         />
                         PROFILE
                       </Link>
+                      {user.email === 'admin@sillagelab.com' && (
+                        <Link
+                          href='/admin'
+                          onClick={() => setIsProfileOpen(false)}
+                          className='flex items-center gap-3 px-6 py-4 text-[10px] font-black tracking-widest text-[#FF3B30] bg-zinc-50 hover:bg-zinc-100 transition-colors border-b border-zinc-50'>
+                          <ShieldCheck
+                            size={14}
+                            strokeWidth={2}
+                          />
+                          ADMIN SUITE
+                        </Link>
+                      )}
                       <Link
                         href='/order'
                         onClick={() => setIsProfileOpen(false)}
-                        className='flex items-center gap-3 px-6 py-4 text-[10px] font-bold tracking-widest text-zinc-900 hover:bg-rose-50 transition-colors border-b border-zinc-50'>
+                        className='flex items-center gap-3 px-6 py-4 text-[10px] font-bold tracking-widest text-zinc-900 hover:bg-zinc-50 transition-colors border-b border-zinc-50'>
                         <Package
                           size={14}
                           strokeWidth={1.5}
@@ -177,8 +214,8 @@ export default function Navbar() {
                         ORDERS
                       </Link>
                       <button
-                        onClick={() => setIsProfileOpen(false)}
-                        className='flex items-center gap-3 w-full px-6 py-4 text-[10px] font-bold tracking-widest text-rose-500 hover:bg-rose-50 transition-colors text-left'>
+                        onClick={handleLogout}
+                        className='flex items-center gap-3 w-full px-6 py-4 text-[10px] font-bold tracking-widest text-[#FF3B30] hover:bg-rose-50 transition-colors text-left'>
                         <LogOut
                           size={14}
                           strokeWidth={1.5}
@@ -200,9 +237,19 @@ export default function Navbar() {
                   strokeWidth={1.2}
                   className={textColorClass}
                 />
-                <span className='absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[8px] font-bold text-white'>
-                  0
-                </span>
+                <AnimatePresence>
+                  {cartCount > 0 && (
+                    <motion.span 
+                      key={cartCount}
+                      initial={{ scale: 0.5, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ type: "spring", stiffness: 500, damping: 15 }}
+                      className='absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#FF3B30] text-[8px] font-bold text-white shadow-lg'
+                    >
+                      {cartCount}
+                    </motion.span>
+                  )}
+                </AnimatePresence>
               </div>
               <span
                 className={`hidden xl:block text-[10px] font-bold tracking-[0.2em] ${textColorClass}`}>
@@ -263,6 +310,7 @@ export default function Navbar() {
                         src={product.image[0]}
                         alt={product.name}
                         fill
+                        sizes="(max-width: 768px) 100vw, 20vw"
                         className='object-cover group-hover:scale-110 transition-all duration-700'
                       />
                     </div>
@@ -280,7 +328,7 @@ export default function Navbar() {
 
               {searchQuery.length > 2 && filteredProducts.length === 0 && (
                 <p className='text-zinc-400 font-prata text-xl'>
-                  No scents found for "{searchQuery}"
+                  No scents found for &quot;{searchQuery}&quot;
                 </p>
               )}
             </div>
@@ -367,3 +415,4 @@ export default function Navbar() {
     </>
   );
 }
+

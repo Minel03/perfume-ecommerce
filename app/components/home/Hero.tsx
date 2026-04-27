@@ -3,7 +3,6 @@
 import { motion, MotionValue } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Play } from 'lucide-react';
 import { assets } from '../../assets/assets';
 
 interface HeroProps {
@@ -21,6 +20,7 @@ export default function Hero({ y }: HeroProps) {
           src={assets.perfumesHero}
           alt='Hero Perfume'
           fill
+          sizes="100vw"
           className='object-cover scale-110'
           priority
         />
@@ -63,15 +63,6 @@ export default function Hero({ y }: HeroProps) {
                 EXPLORE COLLECTION
                 <div className='h-px w-8 bg-black group-hover:bg-white group-hover:w-12 transition-all' />
               </Link>
-              <button className='flex items-center gap-4 text-white text-[10px] font-bold tracking-[0.4em] hover:text-rose-300 transition-colors group'>
-                <div className='h-14 w-14 border border-white/20 rounded-full flex items-center justify-center group-hover:border-rose-300 transition-all'>
-                  <Play
-                    size={16}
-                    fill='white'
-                  />
-                </div>
-                THE FILM
-              </button>
             </div>
           </motion.div>
 

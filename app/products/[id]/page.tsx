@@ -1,7 +1,7 @@
 'use client';
 
-import { use, useState } from 'react';
-import { products } from '../../assets/assets';
+import { use, useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import {
@@ -12,8 +12,25 @@ import {
   RotateCcw,
   Plus,
   Minus,
+  Loader2
 } from 'lucide-react';
 import ProductCard from '../../components/ProductCard';
+import { useCartStore } from '@/lib/store/useCartStore';
+import { useAuthStore } from '@/lib/store/useAuthStore';
+import { useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
+
+interface Product {
+  id: string;
+  _id: string;
+  name: string;
+  price: number;
+  image: string[];
+  description: string;
+  category: string;
+  notes?: { top: string; heart: string; base: string };
+  bestseller: boolean;
+}
 
 export default function ProductPage({
   params,
@@ -21,20 +38,77 @@ export default function ProductPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const product = products.find((p) => p._id === id);
+  const [product, setProduct] = useState<Product | null>(null);
+  const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
+  const [mainImage, setMainImage] = useState<string>('');
+  
+  const addItem = useCartStore((state) => state.addItem);
+  const { user } = useAuthStore();
+  const router = useRouter();
 
-  if (!product) {
+  useEffect(() => {
+    async function fetchProductDetails() {
+      // 1. Fetch current product
+      const { data: prodData } = await supabase
+        .from('products')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (prodData) {
+        const mapped = { ...prodData, _id: prodData.id };
+        setProduct(mapped);
+        const firstImage = (mapped.image?.[0] && mapped.image[0] !== '{}') ? mapped.image[0] : 'https://images.unsplash.com/photo-1594432250843-b173fcfcf89a?q=80&w=1000&auto=format&fit=crop';
+        setMainImage(firstImage);
+
+        // 2. Fetch related
+        const { data: relatedData } = await supabase
+          .from('products')
+          .select('*')
+          .eq('category', prodData.category)
+          .neq('id', id)
+          .limit(4);
+        
+        if (relatedData) {
+          setRelatedProducts(relatedData.map(p => ({ ...p, _id: p.id })));
+        }
+      }
+      setLoading(false);
+    }
+    fetchProductDetails();
+  }, [id]);
+
+  if (loading) {
     return (
-      <div className='min-h-screen flex items-center justify-center'>
-        <h1 className='text-2xl font-prata'>Product not found</h1>
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center space-y-4 pt-32">
+        <Loader2 className="animate-spin text-rose-500" size={32} />
+        <p className="text-[10px] tracking-[0.4em] uppercase text-zinc-400">Retrieving Manifest...</p>
       </div>
     );
   }
 
-  const relatedProducts = products
-    .filter((p) => p.category === product.category && p._id !== product._id)
-    .slice(0, 4);
+  if (!product) {
+    return (
+      <div className='min-h-screen flex items-center justify-center'>
+        <h1 className='text-2xl font-prata'>Fragrance not found</h1>
+      </div>
+    );
+  }
+
+  const handleAddToCart = () => {
+    if (!user) {
+      toast.error('PLEASE SIGN IN TO ACCESS YOUR CONCIERGE');
+      router.push('/login');
+      return;
+    }
+    
+    for (let i = 0; i < quantity; i++) {
+      addItem(product);
+    }
+    toast.success(`ADDED ${quantity} × ${product.name.toUpperCase()} TO CONCIERGE`);
+  };
 
   return (
     <div className='min-h-screen bg-white pt-32 pb-24 px-6 lg:px-12'>
@@ -47,21 +121,33 @@ export default function ProductPage({
             className='sticky top-32 space-y-4'>
             <div className='relative aspect-4/5 bg-zinc-50 overflow-hidden rounded-sm'>
               <Image
-                src={product.image[0]}
+                src={mainImage}
                 alt={product.name}
                 fill
+                sizes="(max-width: 768px) 100vw, 50vw"
                 className='object-cover'
                 priority
               />
             </div>
-            <div className='grid grid-cols-4 gap-4'>
-              {[1, 2, 3, 4].map((i) => (
-                <div
-                  key={i}
-                  className='aspect-square bg-zinc-100 rounded-sm cursor-pointer hover:opacity-80 transition-opacity'
-                />
-              ))}
-            </div>
+            {product.image?.length > 1 && (
+              <div className='grid grid-cols-4 gap-4'>
+                {product.image.map((img: string, i: number) => (
+                  <div
+                    key={i}
+                    onClick={() => setMainImage(img)}
+                    className={`relative aspect-square bg-zinc-100 rounded-sm cursor-pointer hover:opacity-80 transition-all overflow-hidden border-2 ${mainImage === img ? 'border-rose-500' : 'border-transparent'}`}
+                  >
+                    <Image 
+                      src={img} 
+                      alt={`View ${i}`} 
+                      fill 
+                      sizes="100px"
+                      className="object-cover" 
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
           </motion.div>
 
           {/* Right: Product Info */}
@@ -70,7 +156,7 @@ export default function ProductPage({
             animate={{ opacity: 1, x: 0 }}
             className='space-y-12'>
             <div className='space-y-4'>
-              <div className='flex items-center gap-2 text-rose-500'>
+              <div className='flex items-center gap-2 text-[#FF3B30]'>
                 <div className='flex'>
                   {[...Array(5)].map((_, i) => (
                     <Star
@@ -101,7 +187,7 @@ export default function ProductPage({
             {/* Dynamic Olfactive Pyramid */}
             <div className='py-8 border-y border-zinc-100 grid grid-cols-1 md:grid-cols-3 gap-8'>
               <div className='space-y-2'>
-                <p className='text-[8px] font-bold tracking-[0.3em] uppercase text-rose-500'>
+                <p className='text-[8px] font-bold tracking-[0.3em] uppercase text-[#FF3B30]'>
                   Top Notes
                 </p>
                 <p className='text-sm font-prata text-zinc-800'>
@@ -109,7 +195,7 @@ export default function ProductPage({
                 </p>
               </div>
               <div className='space-y-2'>
-                <p className='text-[8px] font-bold tracking-[0.3em] uppercase text-rose-500'>
+                <p className='text-[8px] font-bold tracking-[0.3em] uppercase text-[#FF3B30]'>
                   Heart Notes
                 </p>
                 <p className='text-sm font-prata text-zinc-800'>
@@ -117,7 +203,7 @@ export default function ProductPage({
                 </p>
               </div>
               <div className='space-y-2'>
-                <p className='text-[8px] font-bold tracking-[0.3em] uppercase text-rose-500'>
+                <p className='text-[8px] font-bold tracking-[0.3em] uppercase text-[#FF3B30]'>
                   Base Notes
                 </p>
                 <p className='text-sm font-prata text-zinc-800'>
@@ -132,7 +218,7 @@ export default function ProductPage({
                 <div className='flex items-center border border-zinc-200 rounded-full px-6 py-3 gap-6 text-zinc-900'>
                   <button
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className='hover:text-rose-500 transition-colors'>
+                    className='hover:text-[#FF3B30] transition-colors'>
                     <Minus
                       size={14}
                       strokeWidth={3}
@@ -143,18 +229,22 @@ export default function ProductPage({
                   </span>
                   <button
                     onClick={() => setQuantity(quantity + 1)}
-                    className='hover:text-rose-500 transition-colors'>
+                    className='hover:text-[#FF3B30] transition-colors'>
                     <Plus
                       size={14}
                       strokeWidth={3}
                     />
                   </button>
                 </div>
-                <button className='flex-1 bg-black text-white py-5 text-[10px] font-bold tracking-[0.4em] uppercase rounded-full hover:bg-rose-500 transition-all flex items-center justify-center gap-3'>
+                <button 
+                  onClick={handleAddToCart}
+                  className='flex-1 bg-black text-white py-5 text-[10px] font-bold tracking-[0.4em] uppercase rounded-full hover:bg-[#FF3B30] transition-all flex items-center justify-center gap-3'
+                >
                   <ShoppingBag size={16} />
                   ADD TO CONCIERGE
                 </button>
               </div>
+
 
               <div className='grid grid-cols-2 gap-4'>
                 <div className='flex items-center gap-3 p-4 bg-zinc-50 rounded-sm'>

@@ -1,11 +1,37 @@
 'use client';
 
+import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
-import { products } from '../../assets/assets';
+
+interface Product {
+  _id: string;
+  id: string;
+  name: string;
+  price: number;
+  image: string[];
+}
 
 export default function BestSellers() {
+  const [bestSellers, setBestSellers] = useState<Product[]>([]);
+
+  useEffect(() => {
+    async function fetchBestSellers() {
+      const { data } = await supabase
+        .from('products')
+        .select('*')
+        .eq('bestseller', true)
+        .limit(6);
+      
+      if (data) {
+        setBestSellers(data.map(p => ({ ...p, _id: p.id })));
+      }
+    }
+    fetchBestSellers();
+  }, []);
+
   return (
     <section className='py-48 bg-white'>
       <div className='px-6 mb-24 text-center max-w-7xl mx-auto'>
@@ -19,7 +45,7 @@ export default function BestSellers() {
       </div>
 
       <div className='flex gap-12 overflow-x-auto pb-24 px-6 md:px-24 no-scrollbar scrollbar-hide'>
-        {products.filter(p => p.bestseller).slice(0, 6).map((product, i) => (
+        {bestSellers.map((product, i) => (
           <motion.div
             key={product._id}
             initial={{ opacity: 0, scale: 0.9 }}
@@ -32,6 +58,7 @@ export default function BestSellers() {
                   src={product.image[0]}
                   alt={product.name}
                   fill
+                  sizes="(max-width: 768px) 100vw, 400px"
                   className='object-cover transition-transform duration-1000 group-hover:scale-110'
                 />
                 {/* Minimalist Price Badge */}

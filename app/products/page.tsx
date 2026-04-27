@@ -4,7 +4,37 @@ import { useState } from 'react';
 import { products } from '../assets/assets';
 import ProductCard from '../components/ProductCard';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Filter, X, ChevronDown } from 'lucide-react';
+import { Filter, X } from 'lucide-react';
+
+const FilterButtons = ({ 
+  filterType, 
+  setFilterType, 
+  setIsMobileFilterOpen, 
+  mobile = false 
+}: { 
+  filterType: string;
+  setFilterType: (type: string) => void;
+  setIsMobileFilterOpen: (open: boolean) => void;
+  mobile?: boolean;
+}) => (
+  <div className={`${mobile ? 'flex flex-col gap-8' : 'flex gap-6'} text-zinc-500`}>
+    {['ALL', 'MEN', 'WOMEN', 'UNISEX'].map((type) => (
+      <button
+        key={type}
+        onClick={() => {
+          setFilterType(type.toLowerCase());
+          if (mobile) setIsMobileFilterOpen(false);
+        }}
+        className={`text-left hover:text-black transition-colors ${
+          filterType === type.toLowerCase()
+            ? 'text-black font-bold border-b-2 border-rose-500 pb-1'
+            : ''
+        }`}>
+        {type}
+      </button>
+    ))}
+  </div>
+);
 
 export default function ProductsPage() {
   const [sortBy, setSortBy] = useState('featured');
@@ -13,7 +43,7 @@ export default function ProductsPage() {
 
   const filteredProducts = products.filter((item) => {
     if (filterType === 'all') return true;
-    return item.category === filterType;
+    return item.category?.toLowerCase() === filterType.toLowerCase();
   });
 
   const sortedProducts = [...filteredProducts].sort((a, b) => {
@@ -22,26 +52,6 @@ export default function ProductsPage() {
     if (sortBy === 'featured') return (b.bestseller ? 1 : 0) - (a.bestseller ? 1 : 0);
     return 0;
   });
-
-  const FilterButtons = ({ mobile = false }) => (
-    <div className={`${mobile ? 'flex flex-col gap-8' : 'flex gap-6'} text-zinc-500`}>
-      {['ALL', 'MEN', 'WOMEN', 'UNISEX'].map((type) => (
-        <button
-          key={type}
-          onClick={() => {
-            setFilterType(type.toLowerCase());
-            if (mobile) setIsMobileFilterOpen(false);
-          }}
-          className={`text-left hover:text-black transition-colors ${
-            filterType === type.toLowerCase()
-              ? 'text-black font-bold border-b-2 border-rose-500 pb-1'
-              : ''
-          }`}>
-          {type}
-        </button>
-      ))}
-    </div>
-  );
 
   return (
     <div className='min-h-screen bg-white pt-32 pb-24 px-6 lg:px-12'>
@@ -75,7 +85,11 @@ export default function ProductsPage() {
           </button>
           
           <div className='hidden md:block'>
-            <FilterButtons />
+            <FilterButtons 
+              filterType={filterType} 
+              setFilterType={setFilterType} 
+              setIsMobileFilterOpen={setIsMobileFilterOpen} 
+            />
           </div>
         </div>
 
@@ -111,7 +125,12 @@ export default function ProductsPage() {
                   <X size={20} />
                 </button>
               </div>
-              <FilterButtons mobile />
+              <FilterButtons 
+                filterType={filterType} 
+                setFilterType={setFilterType} 
+                setIsMobileFilterOpen={setIsMobileFilterOpen} 
+                mobile 
+              />
             </motion.div>
           </motion.div>
         )}

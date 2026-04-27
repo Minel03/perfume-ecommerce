@@ -4,6 +4,7 @@ import { useScroll, useTransform } from 'framer-motion';
 import { useRef } from 'react';
 import Hero from './components/home/Hero';
 import Philosophy from './components/home/Philosophy';
+import SecretBoutique from './components/home/SecretBoutique';
 import ScentFinderCTA from './components/home/ScentFinderCTA';
 import BestSellers from './components/home/BestSellers';
 
@@ -23,6 +24,7 @@ export default function LandingPage() {
       <Hero y={y1} />
 
       <Philosophy />
+      <SecretBoutique />
 
       <ScentFinderCTA />
 

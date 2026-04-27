@@ -32,7 +32,7 @@ export default function Philosophy() {
               whileInView={{ opacity: 1 }}
               transition={{ delay: 0.5 }}
               className='text-zinc-500 text-sm leading-relaxed max-w-sm mb-12 font-outfit uppercase tracking-widest'>
-              WE DON'T JUST CREATE PERFUMES; WE CAPTURE MOMENTS. EACH BOTTLE OF SILLAGE IS A TESTAMENT TO THE ART OF SUBTLE PRESENCE—THE SCENT TRAIL THAT REMAINS WHEN YOU LEAVE THE ROOM.
+              WE DON&apos;T JUST CREATE PERFUMES; WE CAPTURE MOMENTS. EACH BOTTLE OF SILLAGE IS A TESTAMENT TO THE ART OF SUBTLE PRESENCE—THE SCENT TRAIL THAT REMAINS WHEN YOU LEAVE THE ROOM.
             </motion.p>
             <Link
               href='/about'
@@ -55,6 +55,7 @@ export default function Philosophy() {
               src={assets.perfumesHero1}
               alt='Editorial'
               fill
+              sizes="(max-width: 1024px) 100vw, 66vw"
               className='object-cover grayscale hover:grayscale-0 transition-all duration-1000 group-hover:scale-105'
             />
             {/* Top-left overlay for text legibility */}
@@ -94,6 +95,7 @@ export default function Philosophy() {
                 src={assets.perfumesHero}
                 alt='Atmosphere'
                 fill
+                sizes="(max-width: 1024px) 100vw, 33vw"
                 className='object-cover group-hover:scale-110 transition-transform duration-1000'
               />
               <div className='absolute inset-0 bg-zinc-900/40 group-hover:bg-zinc-900/10 transition-colors' />

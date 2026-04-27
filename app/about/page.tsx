@@ -48,8 +48,8 @@ export default function AboutPage() {
       <section className='bg-zinc-50 py-32 px-6 lg:px-12'>
         <div className='max-w-4xl mx-auto text-center'>
           <h2 className='text-5xl font-prata mb-12 italic text-zinc-800'>
-            "A scent is a time machine. It is the only sense that bypasses the
-            rational mind and strikes directly at the heart."
+            &quot;A scent is a time machine. It is the only sense that bypasses the
+            rational mind and strikes directly at the heart.&quot;
           </h2>
           <div className='w-20 h-px bg-rose-400 mx-auto mb-12' />
           <p className='text-zinc-500 text-sm tracking-widest uppercase font-bold'>
