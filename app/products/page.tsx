@@ -1,10 +1,22 @@
 'use client';
 
-import { useState } from 'react';
-import { products } from '../assets/assets';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
 import ProductCard from '../components/ProductCard';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Filter, X } from 'lucide-react';
+import Skeleton from '../components/Skeleton';
+
+interface Product {
+  id: string;
+  _id: string;
+  name: string;
+  price: number;
+  image: string[];
+  description: string;
+  category: string;
+  bestseller: boolean;
+}
 
 const FilterButtons = ({ 
   filterType, 
@@ -37,11 +49,29 @@ const FilterButtons = ({
 );
 
 export default function ProductsPage() {
+  const [dbProducts, setDbProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState('featured');
   const [filterType, setFilterType] = useState('all');
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
 
-  const filteredProducts = products.filter((item) => {
+  useEffect(() => {
+    async function fetchProducts() {
+      const { data } = await supabase
+        .from('products')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (data) {
+        const mapped = data.map(p => ({ ...p, _id: p.id }));
+        setDbProducts(mapped as Product[]);
+      }
+      setLoading(false);
+    }
+    fetchProducts();
+  }, []);
+
+  const filteredProducts = dbProducts.filter((item) => {
     if (filterType === 'all') return true;
     return item.category?.toLowerCase() === filterType.toLowerCase();
   });
@@ -53,9 +83,27 @@ export default function ProductsPage() {
     return 0;
   });
 
+  if (loading) {
+    return (
+      <div className='min-h-screen bg-white pt-32 pb-24 px-6 lg:px-12'>
+        <div className='max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-8 gap-y-16'>
+          {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
+            <div key={n} className="space-y-6">
+              <Skeleton className="aspect-3/4 w-full" />
+              <div className="space-y-3 flex flex-col items-center">
+                <Skeleton className="h-4 w-2/3" />
+                <Skeleton className="h-3 w-1/3" />
+                <Skeleton className="h-6 w-1/2 mt-2" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className='min-h-screen bg-white pt-32 pb-24 px-6 lg:px-12'>
-      {/* Header */}
       <header className='max-w-7xl mx-auto mb-20'>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -74,7 +122,6 @@ export default function ProductsPage() {
         </motion.div>
       </header>
 
-      {/* Toolbar */}
       <div className='max-w-7xl mx-auto mb-12 flex flex-row justify-between items-center py-6 border-y border-zinc-100'>
         <div className='flex items-center gap-8 text-[10px] font-bold tracking-widest uppercase'>
           <button 
@@ -106,7 +153,6 @@ export default function ProductsPage() {
         </div>
       </div>
 
-      {/* Mobile Filter Overlay */}
       <AnimatePresence>
         {isMobileFilterOpen && (
           <motion.div
@@ -136,7 +182,6 @@ export default function ProductsPage() {
         )}
       </AnimatePresence>
 
-      {/* Product Grid */}
       <div className='max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-8 gap-y-16'>
         {sortedProducts.map((product) => (
           <ProductCard
@@ -146,7 +191,6 @@ export default function ProductsPage() {
         ))}
       </div>
 
-      {/* Empty State */}
       {sortedProducts.length === 0 && (
         <div className='text-center py-32'>
           <p className='text-zinc-600 font-prata italic text-xl'>

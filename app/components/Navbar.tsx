@@ -15,8 +15,8 @@ import {
 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { products } from '../assets/assets';
 import Image from 'next/image';
+import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/lib/store/useAuthStore';
 import { useCartStore } from '@/lib/store/useCartStore';
 
@@ -69,14 +69,27 @@ export default function Navbar() {
   const textColorClass = isLightText ? 'text-white' : 'text-zinc-900';
   const logoSubColorClass = isLightText ? 'text-rose-300' : 'text-rose-500';
 
-  const filteredProducts =
-    searchQuery.length > 2
-      ? products
-          .filter((p) =>
-            p.name.toLowerCase().includes(searchQuery.toLowerCase()),
-          )
-          .slice(0, 4)
-      : [];
+  const [filteredProducts, setFilteredProducts] = useState<any[]>([]);
+
+  useEffect(() => {
+    async function searchProducts() {
+      if (searchQuery.length > 2) {
+        const { data } = await supabase
+          .from('products')
+          .select('*')
+          .ilike('name', `%${searchQuery}%`)
+          .limit(4);
+        
+        if (data) {
+          setFilteredProducts(data.map(p => ({ ...p, _id: p.id })));
+        }
+      } else {
+        setFilteredProducts([]);
+      }
+    }
+    const timer = setTimeout(searchProducts, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   const handleProfileClick = () => {
     if (user) {

@@ -1,20 +1,47 @@
 'use client';
 
+import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/lib/store/useAuthStore';
 import { motion } from 'framer-motion';
-import { products } from '../../assets/assets';
 import ProductCard from '../ProductCard';
 import { Sparkles, ShieldCheck } from 'lucide-react';
 
+interface Product {
+  _id: string;
+  id: string;
+  name: string;
+  price: number;
+  image: string[];
+  description: string;
+  category: string;
+  bestseller: boolean;
+}
+
 export default function SecretBoutique() {
   const { user } = useAuthStore();
+  const [exclusiveProducts, setExclusiveProducts] = useState<Product[]>([]);
   const hasAccess = user?.user_metadata?.preferences?.exclusive_access;
+
+  useEffect(() => {
+    async function fetchExclusiveProducts() {
+      if (!hasAccess) return;
+
+      const { data } = await supabase
+        .from('products')
+        .select('*')
+        .eq('bestseller', false)
+        .limit(3);
+      
+      if (data) {
+        setExclusiveProducts(data.map(p => ({ ...p, _id: p.id })));
+      }
+    }
+    fetchExclusiveProducts();
+  }, [hasAccess]);
 
   // We only show this section if they have the preference enabled
   if (!hasAccess) return null;
-
-  // Filter for some "exclusive" looking products (e.g., ones not in bestseller)
-  const exclusiveProducts = products.filter(p => !p.bestseller).slice(0, 3);
 
   return (
     <section className="py-32 bg-zinc-950 text-white relative overflow-hidden">

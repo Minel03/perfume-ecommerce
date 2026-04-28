@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { products } from '../assets/assets';
 import Image, { StaticImageData } from 'next/image';
 import Link from 'next/link';
 import { ArrowRight, RefreshCcw, Loader2 } from 'lucide-react';
@@ -98,20 +97,32 @@ export default function QuizPage() {
       }
     }
 
-    // 2. Intelligent Recommendation
-    const filtered = products.filter((p) => p.category === categoryPreference);
-    const fallbackIndex = finalAnswers.join('').length % filtered.length;
+    // 2. Fetch real products from Supabase for intelligent recommendation
+    const { data: dbProducts } = await supabase
+      .from('products')
+      .select('*');
+
+    if (!dbProducts || dbProducts.length === 0) {
+      setIsProcessing(false);
+      return;
+    }
+
+    // Intelligent Recommendation
+    const filtered = dbProducts.filter((p) => p.category === categoryPreference);
+    const fallbackIndex = finalAnswers.join('').length % (filtered.length || 1);
 
     const recommendation =
       filtered.find((p) =>
-        p.description.toLowerCase().includes(vibe.toLowerCase()),
+        p.description?.toLowerCase().includes(vibe.toLowerCase()),
       ) ||
       filtered[fallbackIndex] ||
-      products[0];
+      dbProducts[0];
+
+    const mappedRecommendation = { ...recommendation, _id: recommendation.id };
 
     // Simulate luxury processing
     setTimeout(() => {
-      setResult(recommendation as Product);
+      setResult(mappedRecommendation as Product);
       setIsProcessing(false);
     }, 2500);
   };
